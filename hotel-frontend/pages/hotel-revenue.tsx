@@ -56,18 +56,18 @@ export function HotelRevenue(props: { store: HotelStore }) {
     const revenueDelta = mtdBudget !== 0 ? ((mtdRevenue - mtdBudget) / mtdBudget) * 100 : 0;
 
     // Average occupancy across the period vs budget
-    const avgOcc = data.reduce((s, d) => s + d.occupancy, 0) / data.length;
-    const avgBudgetOcc = data.reduce((s, d) => s + d.budgetOccupancy, 0) / data.length;
+    const avgOcc = data.reduce((s: number, d: any) => s + d.occupancy, 0) / data.length;
+    const avgBudgetOcc = data.reduce((s: number, d: any) => s + d.budgetOccupancy, 0) / data.length;
     const occDelta = avgOcc - avgBudgetOcc;
 
     // Average ADR vs budget
-    const avgAdr = data.reduce((s, d) => s + d.adr, 0) / data.length;
-    const avgBudgetAdr = data.reduce((s, d) => s + d.budgetAdr, 0) / data.length;
+    const avgAdr = data.reduce((s: number, d: any) => s + d.adr, 0) / data.length;
+    const avgBudgetAdr = data.reduce((s: number, d: any) => s + d.budgetAdr, 0) / data.length;
     const adrDelta = avgBudgetAdr !== 0 ? ((avgAdr - avgBudgetAdr) / avgBudgetAdr) * 100 : 0;
 
     // Average RevPAR vs budget
-    const avgRevpar = data.reduce((s, d) => s + d.revpar, 0) / data.length;
-    const avgBudgetRevpar = data.reduce((s, d) => s + d.budgetRevpar, 0) / data.length;
+    const avgRevpar = data.reduce((s: number, d: any) => s + d.revpar, 0) / data.length;
+    const avgBudgetRevpar = data.reduce((s: number, d: any) => s + d.budgetRevpar, 0) / data.length;
     const revparDelta = avgBudgetRevpar !== 0 ? ((avgRevpar - avgBudgetRevpar) / avgBudgetRevpar) * 100 : 0;
 
     return [
@@ -108,7 +108,7 @@ export function HotelRevenue(props: { store: HotelStore }) {
   const revenueChartData = createMemo(() => {
     const data = rawSummaries();
     if (!data || data.length === 0) return [];
-    return data.map((d) => ({
+    return data.map((d: any) => ({
       date: d.date,
       actual: d.revenue,
       budget: d.budgetRevenue,
@@ -127,7 +127,7 @@ export function HotelRevenue(props: { store: HotelStore }) {
   const heatmapData = createMemo(() => {
     const data = rawSummaries();
     if (!data || data.length === 0) return [];
-    return data.map((d) => {
+    return data.map((d: any) => {
       const dayNum = new Date(d.date).getDate();
       return { day: dayNum, occupancy: Math.round(d.occupancy) };
     });

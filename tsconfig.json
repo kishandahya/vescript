@@ -14,5 +14,6 @@
     "resolveJsonModule": true,
     "paths": {}
   },
-  "include": ["src/**/*", "hotel-frontend/**/*", "convex/**/*"]
+  "include": ["src/**/*", "hotel-frontend/**/*"],
+  "exclude": ["convex/**/*", "hotel-frontend/types-modified.ts"]
 }

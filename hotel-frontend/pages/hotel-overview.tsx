@@ -132,8 +132,8 @@ export function HotelOverview(props: { store: HotelStore }) {
     if (!rows) return DEMO_ARRIVALS;
     return {
       total: rows.length,
-      vip: rows.filter((r) => !!r.vipTier).length,
-      early: rows.filter((r) => !!r.eta && r.eta < "12:00").length,
+      vip: rows.filter((r: any) => !!r.vipTier).length,
+      early: rows.filter((r: any) => !!r.eta && r.eta < "12:00").length,
     };
   });
 
@@ -143,8 +143,8 @@ export function HotelOverview(props: { store: HotelStore }) {
     if (!rows) return DEMO_DEPARTURES;
     return {
       total: rows.length,
-      lateCheckouts: rows.filter((r) => !!r.checkoutTime && r.checkoutTime > "11:00").length,
-      outstandingBalance: rows.filter((r) => (r.balance ?? 0) > 0).length,
+      lateCheckouts: rows.filter((r: any) => !!r.checkoutTime && r.checkoutTime > "11:00").length,
+      outstandingBalance: rows.filter((r: any) => (r.balance ?? 0) > 0).length,
     };
   });
 
@@ -162,7 +162,7 @@ export function HotelOverview(props: { store: HotelStore }) {
       : DEMO_QUICK_STATS[0].value;
 
     const groupsInHouse = groups
-      ? groups.filter((g) => g.stage === "definite" || g.stage === "actualized").length
+      ? groups.filter((g: any) => g.stage === "definite" || g.stage === "actualized").length
       : DEMO_QUICK_STATS[1].value;
 
     const hkPending = hk

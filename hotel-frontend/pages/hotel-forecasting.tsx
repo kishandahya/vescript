@@ -257,12 +257,12 @@ export function HotelForecasting(props: { store: HotelStore }) {
           <For each={upcomingEvents()}>
             {(event) => (
               <div class="flex items-center gap-3 px-4 py-3">
-                <span class={`inline-block size-2.5 shrink-0 rounded-full ${IMPACT_STYLES[event.impact].dot}`} />
+                <span class={`inline-block size-2.5 shrink-0 rounded-full ${IMPACT_STYLES[event.impact as keyof typeof IMPACT_STYLES].dot}`} />
                 <div class="flex-1 min-w-0">
                   <div class="text-sm font-medium text-[var(--dls-text-primary)]">{event.name}</div>
                   <div class="text-xs text-[var(--dls-text-secondary)]">{event.dates}</div>
                 </div>
-                <span class={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${IMPACT_STYLES[event.impact].badge}`}>
+                <span class={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${IMPACT_STYLES[event.impact as keyof typeof IMPACT_STYLES].badge}`}>
                   {event.impact}
                 </span>
                 <span class="shrink-0 text-xs font-medium text-[var(--dls-text-secondary)]">
