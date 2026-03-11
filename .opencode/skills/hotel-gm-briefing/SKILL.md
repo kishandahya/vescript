@@ -12,7 +12,7 @@ description: Morning briefing, daily report, and hotel overview aggregating nigh
 
 ## What to do
 
-1. **Pull night audit summary** — Read the latest night audit data from `packages/app/public/hotel-data/night-audit/` or query Convex for last night's closing figures. Extract:
+1. **Pull night audit summary** — Read the latest night audit data from Convex table `nightAudits` (see `convex/schema.ts`). Extract:
    - Rooms sold, occupancy %, ADR, RevPAR
    - Total revenue by department (rooms, F&B, other)
    - No-shows, cancellations, walk-ins, walked guests
@@ -26,7 +26,7 @@ description: Morning briefing, daily report, and hotel overview aggregating nigh
    - **Occupancy forecast**: projected occupancy for today and next 7 days
 
 3. **Guest experience snapshot** — Aggregate recent guest feedback:
-   - Last 24 hours of guest complaints and resolutions from `packages/app/public/hotel-data/feedback/`
+   - Last 24 hours of guest complaints and resolutions from Convex table `guestFeedback` (see `convex/schema.ts`)
    - Online review scores (TripAdvisor, Google, OTA ratings) and recent trends
    - VIP guests in-house with special requests or preferences
    - Service recovery actions pending
@@ -46,13 +46,13 @@ description: Morning briefing, daily report, and hotel overview aggregating nigh
 
 ## Context
 
-- Night audit data: `packages/app/public/hotel-data/night-audit/`
-- Reservations: `packages/app/public/hotel-data/reservations/`
-- Guest feedback: `packages/app/public/hotel-data/feedback/`
-- Financial summaries: `packages/app/public/hotel-data/financials/`
-- Staff schedules: `packages/app/public/hotel-data/staffing/`
-- Market events: `packages/app/public/hotel-data/events/`
-- Convex tables: `reservations`, `nightAudit`, `guestFeedback`, `staffSchedules`
+- Night audit data: Convex table `nightAudits` (see `convex/schema.ts`)
+- Guest feedback: Convex table `guestFeedback` (see `convex/schema.ts`)
+- Market events: Convex query `api.marketEventQueries.getByMarket` (`convex/marketEventQueries.ts`)
+- Schema definition: `convex/schema.ts`
+- Data service hooks: `hotel-frontend/data/hotel-data-service.ts`
+- Type definitions: `hotel-frontend/data/hotel-types.ts`
+- Convex tables: `reservations`, `nightAudits`, `guestFeedback`, `staffSchedules`
 
 ## Output format
 

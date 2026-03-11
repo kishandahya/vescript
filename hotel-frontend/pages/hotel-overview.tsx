@@ -1,4 +1,4 @@
-import { For } from "solid-js";
+import { For, createMemo } from "solid-js";
 import {
   BedDouble,
   Users,
@@ -13,6 +13,15 @@ import {
 } from "lucide-solid";
 import { KpiCard, KpiCardGrid } from "../components/kpi-card";
 import type { HotelStore } from "../state/hotel-store";
+import {
+  useProperty,
+  useDailySummaries,
+  useArrivals,
+  useDepartures,
+  useRoomStats,
+  useHousekeepingProgress,
+  useGroupsByProperty,
+} from "../data/hotel-data-service";
 
 // ---------------------------------------------------------------------------
 // Demo data – Marriott Dallas Downtown (340 rooms, ~78% occ)
@@ -64,6 +73,116 @@ const SEVERITY_DOT: Record<AlertSeverity, string> = {
 // ---------------------------------------------------------------------------
 
 export function HotelOverview(props: { store: HotelStore }) {
+  // ── Resolve property slug → Convex property _id ──────────────────────
+  const property = useProperty(() => props.store.state.selectedPropertySlug);
+  const propertyId = createMemo(() => property()?._id ?? null);
+
+  // ── Live data hooks (return undefined until Convex responds) ─────────
+  const liveSummaries = useDailySummaries(propertyId);
+  const liveArrivals = useArrivals(propertyId);
+  const liveDepartures = useDepartures(propertyId);
+  const liveRoomStats = useRoomStats(propertyId);
+  const liveHkProgress = useHousekeepingProgress(propertyId);
+  const liveGroups = useGroupsByProperty(propertyId);
+
+  // ── KPIs: map latest daily summary → UI shape, fallback to demo ──────
+  const kpis = createMemo(() => {
+    const rows = liveSummaries();
+    if (!rows || rows.length === 0) return DEMO_KPIS;
+
+    // Sort by date descending, take last 7 for trend and latest for current
+    const sorted = [...rows].sort((a, b) => a.date.localeCompare(b.date));
+    const latest = sorted[sorted.length - 1];
+    const trendRows = sorted.slice(-7);
+
+    const pctDelta = (actual: number, budget: number) =>
+      budget !== 0 ? Math.round(((actual - budget) / budget) * 1000) / 10 : 0;
+
+    return {
+      occupancy: {
+        value: latest.occupancy,
+        target: latest.budgetOccupancy,
+        delta: pctDelta(latest.occupancy, latest.budgetOccupancy),
+        trend: trendRows.map((r) => r.occupancy),
+      },
+      adr: {
+        value: latest.adr,
+        target: latest.budgetAdr,
+        delta: pctDelta(latest.adr, latest.budgetAdr),
+        trend: trendRows.map((r) => r.adr),
+      },
+      revpar: {
+        value: latest.revpar,
+        target: latest.budgetRevpar,
+        delta: pctDelta(latest.revpar, latest.budgetRevpar),
+        trend: trendRows.map((r) => r.revpar),
+      },
+      revenue: {
+        value: latest.revenue,
+        target: latest.budgetRevenue,
+        delta: pctDelta(latest.revenue, latest.budgetRevenue),
+        trend: trendRows.map((r) => r.revenue),
+      },
+    };
+  });
+
+  // ── Arrivals: count total, VIPs, early arrivals ──────────────────────
+  const arrivals = createMemo(() => {
+    const rows = liveArrivals();
+    if (!rows) return DEMO_ARRIVALS;
+    return {
+      total: rows.length,
+      vip: rows.filter((r) => !!r.vipTier).length,
+      early: rows.filter((r) => !!r.eta && r.eta < "12:00").length,
+    };
+  });
+
+  // ── Departures: count total, late checkouts, outstanding balances ────
+  const departures = createMemo(() => {
+    const rows = liveDepartures();
+    if (!rows) return DEMO_DEPARTURES;
+    return {
+      total: rows.length,
+      lateCheckouts: rows.filter((r) => !!r.checkoutTime && r.checkoutTime > "11:00").length,
+      outstandingBalance: rows.filter((r) => (r.balance ?? 0) > 0).length,
+    };
+  });
+
+  // ── Quick Stats: derive from room stats + HK progress + groups ───────
+  const quickStats = createMemo(() => {
+    const stats = liveRoomStats();
+    const hk = liveHkProgress();
+    const groups = liveGroups();
+
+    // If none of the live sources are available, use demo data
+    if (!stats && !hk && !groups) return DEMO_QUICK_STATS;
+
+    const roomsAvailable = stats
+      ? (stats["vacant-clean"] ?? 0) + (stats["inspected"] ?? 0)
+      : DEMO_QUICK_STATS[0].value;
+
+    const groupsInHouse = groups
+      ? groups.filter((g) => g.stage === "definite" || g.stage === "actualized").length
+      : DEMO_QUICK_STATS[1].value;
+
+    const hkPending = hk
+      ? hk.dirty + hk.inProgress
+      : DEMO_QUICK_STATS[2].value;
+
+    // Guest satisfaction has no Convex source yet – keep demo value
+    const satisfaction = DEMO_QUICK_STATS[3].value;
+
+    return [
+      { label: "Rooms Available", value: roomsAvailable, icon: BedDouble },
+      { label: "Groups In-House", value: groupsInHouse, icon: Users },
+      { label: "HK Pending", value: hkPending, icon: ClipboardCheck },
+      { label: "Guest Satisfaction", value: satisfaction, icon: Sparkles },
+    ];
+  });
+
+  // Alerts – no Convex table, keep hardcoded
+  const alerts = () => DEMO_ALERTS;
+
   return (
     <div class="space-y-6">
       {/* ── KPI Cards ────────────────────────────────────────────── */}
@@ -74,35 +193,35 @@ export function HotelOverview(props: { store: HotelStore }) {
         <KpiCardGrid>
           <KpiCard
             label="Occupancy"
-            value={DEMO_KPIS.occupancy.value}
+            value={kpis().occupancy.value}
             unit="%"
-            target={DEMO_KPIS.occupancy.target}
-            delta={DEMO_KPIS.occupancy.delta}
-            trend={DEMO_KPIS.occupancy.trend}
+            target={kpis().occupancy.target}
+            delta={kpis().occupancy.delta}
+            trend={kpis().occupancy.trend}
           />
           <KpiCard
             label="ADR"
-            value={DEMO_KPIS.adr.value}
+            value={kpis().adr.value}
             prefix="$"
-            target={DEMO_KPIS.adr.target}
-            delta={DEMO_KPIS.adr.delta}
-            trend={DEMO_KPIS.adr.trend}
+            target={kpis().adr.target}
+            delta={kpis().adr.delta}
+            trend={kpis().adr.trend}
           />
           <KpiCard
             label="RevPAR"
-            value={DEMO_KPIS.revpar.value}
+            value={kpis().revpar.value}
             prefix="$"
-            target={DEMO_KPIS.revpar.target}
-            delta={DEMO_KPIS.revpar.delta}
-            trend={DEMO_KPIS.revpar.trend}
+            target={kpis().revpar.target}
+            delta={kpis().revpar.delta}
+            trend={kpis().revpar.trend}
           />
           <KpiCard
             label="Revenue"
-            value={DEMO_KPIS.revenue.value.toLocaleString()}
+            value={kpis().revenue.value.toLocaleString()}
             prefix="$"
-            target={DEMO_KPIS.revenue.target}
-            delta={DEMO_KPIS.revenue.delta}
-            trend={DEMO_KPIS.revenue.trend}
+            target={kpis().revenue.target}
+            delta={kpis().revenue.delta}
+            trend={kpis().revenue.trend}
           />
         </KpiCardGrid>
       </section>
@@ -121,20 +240,20 @@ export function HotelOverview(props: { store: HotelStore }) {
             </div>
             <div class="mt-3 grid grid-cols-3 gap-2 text-center">
               <div>
-                <div class="text-2xl font-bold text-[var(--dls-text-primary)]">{DEMO_ARRIVALS.total}</div>
+                <div class="text-2xl font-bold text-[var(--dls-text-primary)]">{arrivals().total}</div>
                 <div class="text-xs text-[var(--dls-text-secondary)]">Total</div>
               </div>
               <div>
                 <div class="flex items-center justify-center gap-1 text-2xl font-bold text-[var(--dls-text-primary)]">
                   <Crown class="size-4 text-yellow-9" />
-                  {DEMO_ARRIVALS.vip}
+                  {arrivals().vip}
                 </div>
                 <div class="text-xs text-[var(--dls-text-secondary)]">VIP</div>
               </div>
               <div>
                 <div class="flex items-center justify-center gap-1 text-2xl font-bold text-[var(--dls-text-primary)]">
                   <Clock class="size-4 text-blue-9" />
-                  {DEMO_ARRIVALS.early}
+                  {arrivals().early}
                 </div>
                 <div class="text-xs text-[var(--dls-text-secondary)]">Early</div>
               </div>
@@ -149,20 +268,20 @@ export function HotelOverview(props: { store: HotelStore }) {
             </div>
             <div class="mt-3 grid grid-cols-3 gap-2 text-center">
               <div>
-                <div class="text-2xl font-bold text-[var(--dls-text-primary)]">{DEMO_DEPARTURES.total}</div>
+                <div class="text-2xl font-bold text-[var(--dls-text-primary)]">{departures().total}</div>
                 <div class="text-xs text-[var(--dls-text-secondary)]">Total</div>
               </div>
               <div>
                 <div class="flex items-center justify-center gap-1 text-2xl font-bold text-[var(--dls-text-primary)]">
                   <Clock class="size-4 text-yellow-9" />
-                  {DEMO_DEPARTURES.lateCheckouts}
+                  {departures().lateCheckouts}
                 </div>
                 <div class="text-xs text-[var(--dls-text-secondary)]">Late C/O</div>
               </div>
               <div>
                 <div class="flex items-center justify-center gap-1 text-2xl font-bold text-[var(--dls-text-primary)]">
                   <DollarSign class="size-4 text-red-9" />
-                  {DEMO_DEPARTURES.outstandingBalance}
+                  {departures().outstandingBalance}
                 </div>
                 <div class="text-xs text-[var(--dls-text-secondary)]">Open Balance</div>
               </div>
@@ -180,7 +299,7 @@ export function HotelOverview(props: { store: HotelStore }) {
           </span>
         </h2>
         <div class="rounded-[var(--dls-radius)] border border-[var(--dls-border)] bg-[var(--dls-surface)] divide-y divide-[var(--dls-border)]">
-          <For each={DEMO_ALERTS}>
+          <For each={alerts()}>
             {(alert) => (
               <button
                 class="flex w-full items-center gap-3 px-4 py-3 text-left text-sm transition-colors hover:bg-[var(--dls-sidebar)]"
@@ -200,7 +319,7 @@ export function HotelOverview(props: { store: HotelStore }) {
           Quick Stats
         </h2>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <For each={DEMO_QUICK_STATS}>
+          <For each={quickStats()}>
             {(stat) => (
               <div class="rounded-[var(--dls-radius)] border border-[var(--dls-border)] bg-[var(--dls-surface)] p-4 text-center">
                 <stat.icon class="mx-auto mb-1 size-5 text-[var(--dls-accent)]" />

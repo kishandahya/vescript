@@ -12,7 +12,7 @@ description: Portfolio flash, property comparison, and regional performance anal
 
 ## What to do
 
-1. **Load multi-property data** — Read performance data for all properties in the portfolio from `packages/app/public/hotel-data/portfolio/` or query Convex for multi-property datasets. Identify the properties under management and their respective budgets.
+1. **Load multi-property data** — Read performance data for all properties in the portfolio from Convex query `api.portfolioQueries.getPortfolio` (`convex/portfolioQueries.ts`). Identify the properties under management and their respective budgets.
 
 2. **Calculate KPI variance to budget** — For each property, compute:
    - Occupancy %: actual vs. budget vs. LY
@@ -44,10 +44,11 @@ description: Portfolio flash, property comparison, and regional performance anal
 
 ## Context
 
-- Portfolio data: `packages/app/public/hotel-data/portfolio/`
-- Individual property data: `packages/app/public/hotel-data/properties/`
-- Budget data: `packages/app/public/hotel-data/budgets/`
-- Comp set data: `packages/app/public/hotel-data/compset/`
+- Portfolio data: Convex query `api.portfolioQueries.getPortfolio` (`convex/portfolioQueries.ts`)
+- Comp set data: Convex query `api.compSetQueries.getByProperty` (`convex/compSetQueries.ts`)
+- Schema definition: `convex/schema.ts`
+- Data service hooks: `hotel-frontend/data/hotel-data-service.ts`
+- Type definitions: `hotel-frontend/data/hotel-types.ts`
 - Convex tables: `properties`, `budgets`, `monthlyPerformance`, `guestSatisfaction`
 
 ## Output format

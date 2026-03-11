@@ -7,7 +7,7 @@
 // ---------------------------------------------------------------------------
 import { useConvexQuery, useConvexMutation } from "./convex-client";
 // @ts-ignore – generated file may not exist yet
-import { api } from "../../../../../convex/_generated/api";
+import { api } from "../../convex/_generated/api";
 
 // ---------------------------------------------------------------------------
 // Property queries  (convex/properties.ts)
@@ -94,6 +94,10 @@ export const useRegionSummaries = (regionId: () => string | null) =>
     const r = regionId();
     return r ? { regionId: r } : "skip";
   });
+
+/** Latest daily summary for every property (portfolio view). */
+export const useAllLatestSummaries = () =>
+  useConvexQuery(api.summaryQueries.getAllLatest, () => ({}));
 
 // ---------------------------------------------------------------------------
 // Comp set queries  (convex/compSetQueries.ts)

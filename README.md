@@ -1,6 +1,19 @@
 # Hotel Co-Pilot
 
-OpenWork adapted for multi-property hotel management, modeled after Remington Hospitality's portfolio (15 properties, 3 regions, 3,898 rooms).
+A multi-property hotel management dashboard modeled after Remington Hospitality's portfolio (15 properties, 3 regions, 3,898 rooms). Built with SolidJS, Convex, and Tailwind CSS v4.
+
+## Quick Start
+
+```bash
+npm install
+npm run dev
+# Open http://localhost:5173 — works immediately with demo data
+
+# Optional: Connect to Convex for live data
+npx convex dev          # Creates .env.local with VITE_CONVEX_URL
+npm run convex:seed     # Seeds all demo data (properties, rooms, financials)
+npm run dev             # Now uses live Convex data
+```
 
 ## What's Included
 
@@ -11,50 +24,16 @@ OpenWork adapted for multi-property hotel management, modeled after Remington Ho
 
 ### SolidJS Frontend (`hotel-frontend/`)
 - Dashboard shell with persona switcher (6 roles) and property selector (15 properties)
-- **Overview tab**: KPI cards (Occupancy, ADR, RevPAR, Revenue), alerts, activity summary
-- **Operations tab**: Floor-by-floor room grid (340 rooms), arrivals/departures, housekeeping
-- **Revenue tab**: SVG line charts (actual vs budget), stacked bar breakdown, heatmap calendar
-- **Portfolio tab**: Multi-property grid with sorting/filtering for district managers
-- **Invoicing tab**: Invoice table, detail modal, anomaly badges, approval workflow
-- **Forecasting tab**: 90-day forecast, booking pace, demand calendar, compression indicators
-- All charts are pure SVG (zero external chart dependencies)
+- **7 tab pages**: Overview, Operations, Revenue, Portfolio, Invoicing, Forecasting, Groups
+- All charts are pure SVG — zero external chart dependencies
+- Dark mode toggle in the header
 
 ### OpenCode AI Integration (`.opencode/`)
 - **10 skills**: Revenue manager, GM briefing, district manager, group booking, invoicing, forecasting, front office, housekeeping, collaborative, portfolio analysis
 - **10 commands**: Morning briefing, rate review, portfolio flash, forecast, displacement analysis, invoice review, group analysis, demand calendar, property comparison, housekeeping optimize
 
 ### Documentation
-- `HOTEL_COPILOT_DEMO.md`: 600-line demo walkthrough with 5 persona scenarios and 25-minute live demo script
-
-## Integration with OpenWork
-
-These files are designed to be placed into the [OpenWork](https://github.com/different-ai/openwork) repository:
-
-| This repo | OpenWork destination |
-|-----------|---------------------|
-| `hotel-frontend/` | `packages/app/src/app/hotel/` |
-| `convex/` | `convex/` |
-| `.opencode/` | `.opencode/` |
-| `HOTEL_COPILOT_DEMO.md` | `HOTEL_COPILOT_DEMO.md` |
-
-### Route Integration
-Add `"hotel"` to the `View` type in `packages/app/src/app/types.ts` and wire `HotelDashboard` into `app.tsx` (see `hotel-frontend/types-modified.ts` for the modified type).
-
-## Quick Start (within OpenWork)
-
-```bash
-cd /path/to/openwork
-
-# Start the UI
-cd packages/app && pnpm dev
-# Navigate to /hotel
-
-# Optional: Start Convex for live data
-npx convex dev
-npx convex run seed:seed
-npx convex run seedRooms:seedRooms
-npx convex run seedFinancial:seedFinancial
-```
+- `HOTEL_COPILOT_DEMO.md` — 600-line demo walkthrough with 5 persona scenarios and 25-minute live demo script
 
 ## Personas
 
@@ -64,16 +43,54 @@ npx convex run seedFinancial:seedFinancial
 | Revenue Manager | Revenue, Forecasting | Rate analysis, comp set benchmarking |
 | District Manager | Portfolio | Multi-property grid, sorting, benchmarking |
 | Controller | Invoicing | Anomaly detection, approval workflow |
-| Director of Sales | Forecasting | Demand calendar, group pipeline, booking pace |
+| Director of Sales | Forecasting, Groups | Demand calendar, group pipeline, booking pace |
 | Front Office Manager | Operations | Room grid, arrivals/departures, housekeeping |
 
-## Build Verification
-- TypeScript: 0 errors in hotel module files
-- Vite build: succeeds (2,108 modules transformed)
-- All 6 tab pages wired into dashboard shell
+## Tech Stack
 
-## Stats
-- **72 files** total
-- **~7,100 lines** of TypeScript/TSX/Markdown
-- **20 Convex tables** with realistic seed data
-- **18 SolidJS components** + 6 page views + dashboard shell
+- **SolidJS** — reactive UI framework
+- **Convex** — backend-as-a-service (schema, queries, mutations, seed scripts)
+- **Tailwind CSS v4** — utility-first styling via `@tailwindcss/vite` plugin
+- **Vite** — dev server and bundler
+- **TypeScript** — strict mode, end-to-end type safety
+- **lucide-solid** — icon library
+
+## Project Structure
+
+```
+├── index.html                  # Vite entry HTML
+├── src/index.tsx               # App bootstrap (Convex provider + fallback)
+├── vite.config.ts              # Vite + SolidJS + Tailwind v4
+├── tsconfig.json               # TypeScript config
+├── package.json                # Dependencies and scripts
+├── .env.local.example          # Environment variable template
+│
+├── convex/                     # Convex backend
+│   ├── schema.ts               # 20-table schema
+│   ├── seed.ts                 # Core seed data
+│   ├── seedRooms.ts            # Room seed data
+│   ├── seedFinancial.ts        # Financial seed data
+│   ├── *Queries.ts             # Query functions
+│   └── *Mutations.ts           # Mutation functions
+│
+├── hotel-frontend/             # SolidJS frontend
+│   ├── hotel-dashboard.tsx     # Main dashboard shell
+│   ├── index.css               # Tailwind v4 entry + custom styles
+│   ├── state/hotel-store.ts    # Global reactive store
+│   ├── data/                   # Data layer
+│   │   ├── convex-client.ts    # Convex client + provider
+│   │   ├── hotel-data-service.ts # Demo data fallback
+│   │   └── hotel-types.ts      # Shared TypeScript types
+│   ├── components/             # Reusable UI components
+│   └── pages/                  # Tab pages (7 views)
+│
+├── .opencode/                  # AI skills and commands
+│   ├── skills/                 # 10 AI skill definitions
+│   └── commands/               # 10 AI command definitions
+│
+└── HOTEL_COPILOT_DEMO.md       # Demo walkthrough
+```
+
+## Dark Mode
+
+Toggle dark mode using the sun/moon button in the header. The theme is persisted in the reactive store and applies Tailwind's `dark` class to the dashboard root.

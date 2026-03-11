@@ -8,6 +8,7 @@ import { HotelPortfolio } from "./pages/hotel-portfolio";
 import { HotelRevenue } from "./pages/hotel-revenue";
 import { HotelInvoicing } from "./pages/hotel-invoicing";
 import { HotelForecasting } from "./pages/hotel-forecasting";
+import { HotelGroups } from "./pages/hotel-groups";
 
 export default function HotelDashboard() {
   const store = createHotelStore();
@@ -43,7 +44,7 @@ export default function HotelDashboard() {
             <HotelForecasting store={store} />
           </Match>
           <Match when={store.state.activeTab === "groups"}>
-            <div id="hotel-groups-slot">Groups tab placeholder</div>
+            <HotelGroups store={store} />
           </Match>
         </Switch>
       </main>

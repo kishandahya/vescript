@@ -15,6 +15,7 @@ interface HotelState {
   persona: HotelPersona;
   activeTab: HotelTab;
   portfolioView: boolean;
+  darkMode: boolean;
 }
 
 export function createHotelStore() {
@@ -24,6 +25,7 @@ export function createHotelStore() {
     persona: "gm",
     activeTab: "overview",
     portfolioView: false,
+    darkMode: false,
   });
 
   /** Resolved config for the active persona. */
@@ -50,6 +52,12 @@ export function createHotelStore() {
   const togglePortfolioView = () =>
     setState("portfolioView", !state.portfolioView);
 
+  const toggleDarkMode = () => {
+    const next = !state.darkMode;
+    setState("darkMode", next);
+    document.documentElement.setAttribute("data-theme", next ? "dark" : "light");
+  };
+
   return {
     state,
     personaConfig,
@@ -59,6 +67,7 @@ export function createHotelStore() {
     setProperty,
     setRegion,
     togglePortfolioView,
+    toggleDarkMode,
   };
 }
 

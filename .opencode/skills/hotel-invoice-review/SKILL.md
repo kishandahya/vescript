@@ -12,21 +12,21 @@ description: Invoice review, bill approval, expense analysis, and vendor managem
 
 ## What to do
 
-1. **Load invoice data** — Read pending invoices from `packages/app/public/hotel-data/invoices/` or query Convex for invoice records. For each invoice, extract:
+1. **Load invoice data** — Read pending invoices from Convex query `api.invoiceQueries.getByProperty` (`convex/invoiceQueries.ts`). For each invoice, extract:
    - Vendor name and vendor ID
    - Invoice number, date, and due date
    - Line items with quantities, unit prices, and totals
    - PO number (if referenced)
    - Department and GL code assignment
 
-2. **Cross-reference vendor contracts** — For each vendor, check against contract terms in `packages/app/public/hotel-data/contracts/`:
+2. **Cross-reference vendor contracts** — For each vendor, check against contract terms in Convex (see `convex/schema.ts` for vendor/contract tables):
    - Are unit prices within contracted rates? Flag any line item exceeding the contract price by more than 2%.
    - Is the vendor billing the correct entity and address?
    - Are payment terms consistent with the contract (Net 30, Net 60, etc.)?
    - Is the contract still active or has it expired?
 
 3. **Check budget remaining** — For each department/GL code:
-   - Pull MTD and YTD spend from `packages/app/public/hotel-data/budgets/`
+   - Pull MTD and YTD spend from Convex (see `convex/schema.ts` for budget tables)
    - Calculate remaining budget after this invoice
    - Flag if approving this invoice would exceed the monthly or annual budget
    - Show burn rate (% of budget consumed vs. % of period elapsed)
@@ -53,11 +53,10 @@ description: Invoice review, bill approval, expense analysis, and vendor managem
 
 ## Context
 
-- Pending invoices: `packages/app/public/hotel-data/invoices/`
-- Vendor contracts: `packages/app/public/hotel-data/contracts/`
-- Budget data: `packages/app/public/hotel-data/budgets/`
-- Purchase orders: `packages/app/public/hotel-data/purchase-orders/`
-- Historical invoices: `packages/app/public/hotel-data/invoices/history/`
+- Pending invoices: Convex query `api.invoiceQueries.getByProperty` (`convex/invoiceQueries.ts`)
+- Schema definition: `convex/schema.ts`
+- Data service hooks: `hotel-frontend/data/hotel-data-service.ts`
+- Type definitions: `hotel-frontend/data/hotel-types.ts`
 - Convex tables: `invoices`, `vendors`, `contracts`, `purchaseOrders`, `budgets`
 
 ## Output format

@@ -23,7 +23,7 @@ description: Group RFPs, block management, displacement analysis, and group book
    - Historical pickup if a repeat group
 
 2. **Run displacement analysis** — This is the core of the evaluation:
-   - Pull transient demand forecast for the requested dates from `packages/app/public/hotel-data/forecasts/`
+   - Pull transient demand forecast for the requested dates from Convex query `api.forecastQueries.getByProperty` (`convex/forecastQueries.ts`)
    - Calculate **unconstrained transient demand** (demand if no group existed)
    - Determine **displaced transient rooms** = max(0, unconstrained demand + group block - total inventory)
    - Calculate **displaced transient revenue** = displaced rooms × forecasted transient ADR
@@ -57,10 +57,12 @@ description: Group RFPs, block management, displacement analysis, and group book
 
 ## Context
 
-- Transient forecasts: `packages/app/public/hotel-data/forecasts/`
-- Group history: `packages/app/public/hotel-data/groups/`
-- Rate configuration: `packages/app/public/hotel-data/rates/`
-- Event space: `packages/app/public/hotel-data/events-space/`
+- Transient forecasts: Convex query `api.forecastQueries.getByProperty` (`convex/forecastQueries.ts`)
+- Group history: Convex query `api.groupQueries.getByProperty` (`convex/groupQueries.ts`)
+- Rate configuration: Convex query `api.rateQueries.getByProperty` (`convex/rateQueries.ts`)
+- Schema definition: `convex/schema.ts`
+- Data service hooks: `hotel-frontend/data/hotel-data-service.ts`
+- Type definitions: `hotel-frontend/data/hotel-types.ts`
 - Convex tables: `groups`, `reservations`, `forecasts`, `eventSpace`
 
 ## Output format

@@ -1,4 +1,4 @@
-import { For } from "solid-js";
+import { createMemo, For } from "solid-js";
 import {
   Calendar,
   TrendingUp,
@@ -9,12 +9,17 @@ import { ForecastChart } from "../components/forecast-chart";
 import { BookingPace } from "../components/booking-pace";
 import { DemandCalendar } from "../components/demand-calendar";
 import type { HotelStore } from "../state/hotel-store";
+import {
+  useProperty,
+  useForecasts,
+  useMarketEvents,
+} from "../data/hotel-data-service";
 
 // ---------------------------------------------------------------------------
 // Forecasting tab – key indicators, charts, demand calendar, market events
 // ---------------------------------------------------------------------------
 
-// Key indicator cards data
+// Key indicator cards data (fallback)
 const KEY_INDICATORS = [
   {
     label: "Compression Date",
@@ -50,7 +55,7 @@ const KEY_INDICATORS = [
   },
 ];
 
-// Key insights
+// Key insights (kept hardcoded – insights require AI analysis)
 const KEY_INSIGHTS = [
   { text: "Booking pace 17.8% ahead of LY", type: "positive" as const },
   { text: "Dallas Auto Show (Jan 10-14) driving compression", type: "alert" as const },
@@ -64,7 +69,7 @@ const INSIGHT_STYLES = {
   info: "bg-blue-3 text-blue-11",
 };
 
-// Upcoming market events
+// Upcoming market events (fallback)
 const UPCOMING_EVENTS = [
   { name: "Dallas Auto Show", dates: "Jan 10-14", impact: "high" as const, estDemand: "+120 rooms/night" },
   { name: "North Texas Business Expo", dates: "Feb 20-22", impact: "medium" as const, estDemand: "+60 rooms/night" },
@@ -78,7 +83,97 @@ const IMPACT_STYLES = {
   low: { dot: "bg-blue-9", badge: "bg-blue-3 text-blue-11" },
 };
 
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function formatDateRange(start: string, end: string): string {
+  const s = new Date(start);
+  const e = new Date(end);
+  const sMonth = s.toLocaleDateString("en-US", { month: "short" });
+  const eMonth = e.toLocaleDateString("en-US", { month: "short" });
+  if (sMonth === eMonth) {
+    return `${sMonth} ${s.getDate()}-${e.getDate()}`;
+  }
+  return `${sMonth} ${s.getDate()} - ${eMonth} ${e.getDate()}`;
+}
+
+function mapImpact(demandImpact: string): "high" | "medium" | "low" {
+  const lower = demandImpact.toLowerCase();
+  if (lower === "high") return "high";
+  if (lower === "medium") return "medium";
+  return "low";
+}
+
 export function HotelForecasting(props: { store: HotelStore }) {
+  // ── Resolve property from store slug ──────────────────────────────
+  const liveProperty = useProperty(() => props.store.state.selectedPropertySlug);
+  const propertyId = createMemo(() => {
+    const p = liveProperty();
+    return p ? (p._id as string) : null;
+  });
+  const propertyMarket = createMemo(() => {
+    const p = liveProperty();
+    return p ? (p.market as string) : null;
+  });
+
+  // ── Convex live data ──────────────────────────────────────────────
+  const liveForecasts = useForecasts(propertyId);
+  const liveMarketEvents = useMarketEvents(propertyMarket);
+
+  // ── Derive key indicators from forecast data ──────────────────────
+  const keyIndicators = createMemo(() => {
+    const forecasts = liveForecasts();
+    if (!forecasts || forecasts.length === 0) return KEY_INDICATORS;
+
+    // Sort by date ascending
+    const sorted = [...forecasts].sort((a, b) => a.date.localeCompare(b.date));
+
+    // Compression date: first date where forecast >= 90% occupancy
+    const compressionDay = sorted.find((f) => f.forecast >= 90);
+    const compressionValue = compressionDay
+      ? new Date(compressionDay.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+      : KEY_INDICATORS[0].value;
+
+    // Need date: first date where otbRooms < 50% of budget
+    const needDay = sorted.find((f) => f.otbRooms < f.budget * 0.5);
+    const needValue = needDay
+      ? new Date(needDay.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+      : KEY_INDICATORS[1].value;
+
+    // 30-day forecast occupancy (average of first 30 days' forecast values)
+    const first30 = sorted.slice(0, 30);
+    const avg30Occ = first30.length
+      ? +(first30.reduce((s, f) => s + f.forecast, 0) / first30.length).toFixed(1)
+      : 76.2;
+
+    // 30-day forecast ADR — not in forecast schema, keep hardcoded fallback
+    const adrValue = KEY_INDICATORS[3].value;
+
+    return [
+      { ...KEY_INDICATORS[0], value: compressionValue, warning: !!compressionDay },
+      { ...KEY_INDICATORS[1], value: needValue, warning: !!needDay },
+      { ...KEY_INDICATORS[2], value: `${avg30Occ}%` },
+      { ...KEY_INDICATORS[3], value: adrValue },
+    ];
+  });
+
+  // ── Map market events from Convex ─────────────────────────────────
+  const upcomingEvents = createMemo(() => {
+    const raw = liveMarketEvents();
+    if (!raw || raw.length === 0) return UPCOMING_EVENTS;
+    return raw.map((evt: any) => ({
+      name: evt.name as string,
+      dates: formatDateRange(evt.startDate, evt.endDate),
+      impact: mapImpact(evt.demandImpact),
+      estDemand: evt.demandImpact === "high"
+        ? "+120 rooms/night"
+        : evt.demandImpact === "medium"
+          ? "+60 rooms/night"
+          : "+25 rooms/night",
+    }));
+  });
+
   return (
     <div class="space-y-6">
       {/* ── Key Indicators ───────────────────────────────────────── */}
@@ -87,7 +182,7 @@ export function HotelForecasting(props: { store: HotelStore }) {
           Key Indicators
         </h2>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <For each={KEY_INDICATORS}>
+          <For each={keyIndicators()}>
             {(kpi) => (
               <div class="rounded-[var(--dls-radius)] border border-[var(--dls-border)] bg-[var(--dls-surface)] p-4 text-center">
                 <div class={`mx-auto mb-2 flex size-8 items-center justify-center rounded-full ${kpi.bgColor}`}>
@@ -159,7 +254,7 @@ export function HotelForecasting(props: { store: HotelStore }) {
           </span>
         </h2>
         <div class="rounded-[var(--dls-radius)] border border-[var(--dls-border)] bg-[var(--dls-surface)] divide-y divide-[var(--dls-border)]">
-          <For each={UPCOMING_EVENTS}>
+          <For each={upcomingEvents()}>
             {(event) => (
               <div class="flex items-center gap-3 px-4 py-3">
                 <span class={`inline-block size-2.5 shrink-0 rounded-full ${IMPACT_STYLES[event.impact].dot}`} />

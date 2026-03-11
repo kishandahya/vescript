@@ -20,7 +20,7 @@ description: Revenue meeting prep, strategy meeting agendas, cross-department co
    - **Daily Operations Huddle**: today's priorities, guest issues, staffing, maintenance
    - **Group Review Meeting**: group pipeline, tentative blocks, booking pace
 
-2. **Generate pickup summary** (for revenue meetings) — From `packages/app/public/hotel-data/reservations/`:
+2. **Generate pickup summary** (for revenue meetings) — From Convex query `api.summaryQueries.getByProperty` (`convex/summaryQueries.ts`):
    - 7-day pickup: rooms and revenue added to the books in the last 7 days
    - Pickup by segment (transient, group, contract, OTA, direct)
    - Pickup by rate code (BAR, corporate, government, package, discount)
@@ -40,7 +40,7 @@ description: Revenue meeting prep, strategy meeting agendas, cross-department co
    - Are LOS restrictions in place for compression nights?
    - Did any unauthorized discounting occur?
 
-5. **Prepare competitive intelligence** — From `packages/app/public/hotel-data/compset/`:
+5. **Prepare competitive intelligence** — From Convex query `api.compSetQueries.getByProperty` (`convex/compSetQueries.ts`):
    - Comp set rate positioning for key future dates
    - Recent rate moves by competitors
    - New promotions or packages in the market
@@ -60,12 +60,13 @@ description: Revenue meeting prep, strategy meeting agendas, cross-department co
 
 ## Context
 
-- Reservations: `packages/app/public/hotel-data/reservations/`
-- Historical data: `packages/app/public/hotel-data/historical/`
-- Comp set data: `packages/app/public/hotel-data/compset/`
-- Rate configuration: `packages/app/public/hotel-data/rates/`
-- Meeting history: `packages/app/public/hotel-data/meetings/`
-- Group pipeline: `packages/app/public/hotel-data/groups/`
+- Historical data: Convex query `api.summaryQueries.getByProperty` (`convex/summaryQueries.ts`)
+- Comp set data: Convex query `api.compSetQueries.getByProperty` (`convex/compSetQueries.ts`)
+- Rate configuration: Convex query `api.rateQueries.getByProperty` (`convex/rateQueries.ts`)
+- Group pipeline: Convex query `api.groupQueries.getByProperty` (`convex/groupQueries.ts`)
+- Schema definition: `convex/schema.ts`
+- Data service hooks: `hotel-frontend/data/hotel-data-service.ts`
+- Type definitions: `hotel-frontend/data/hotel-types.ts`
 - Convex tables: `reservations`, `meetings`, `actionItems`, `compSetRates`
 
 ## Output format

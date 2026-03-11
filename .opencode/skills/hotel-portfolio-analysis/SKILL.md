@@ -13,7 +13,7 @@ description: Portfolio expense analysis, utility cost benchmarking, labor cost c
 
 ## What to do
 
-1. **Load portfolio expense data** — Read from `packages/app/public/hotel-data/portfolio/` and `packages/app/public/hotel-data/financials/`:
+1. **Load portfolio expense data** — Read from Convex query `api.portfolioQueries.getPortfolio` (`convex/portfolioQueries.ts`):
    - Monthly P&L for each property in the portfolio
    - Expense categories: labor, utilities, supplies, maintenance, contract services, insurance, marketing
    - Per-occupied-room (POR) calculations for each category
@@ -63,12 +63,10 @@ description: Portfolio expense analysis, utility cost benchmarking, labor cost c
 
 ## Context
 
-- Portfolio financials: `packages/app/public/hotel-data/portfolio/`
-- Property P&Ls: `packages/app/public/hotel-data/financials/`
-- Budget data: `packages/app/public/hotel-data/budgets/`
-- Utility records: `packages/app/public/hotel-data/utilities/`
-- Labor data: `packages/app/public/hotel-data/labor/`
-- Vendor contracts: `packages/app/public/hotel-data/contracts/`
+- Portfolio financials: Convex query `api.portfolioQueries.getPortfolio` (`convex/portfolioQueries.ts`)
+- Schema definition: `convex/schema.ts`
+- Data service hooks: `hotel-frontend/data/hotel-data-service.ts`
+- Type definitions: `hotel-frontend/data/hotel-types.ts`
 - Convex tables: `properties`, `financials`, `budgets`, `utilityRecords`, `laborReports`
 
 ## Output format

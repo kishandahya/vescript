@@ -1,4 +1,4 @@
-import { For } from "solid-js";
+import { For, createMemo } from "solid-js";
 import {
   LogIn,
   LogOut,
@@ -9,22 +9,29 @@ import {
 } from "lucide-solid";
 import { RoomGrid } from "../components/room-grid";
 import type { HotelStore } from "../state/hotel-store";
+import {
+  useProperty,
+  useArrivals,
+  useDepartures,
+  useHousekeepingProgress,
+} from "../data/hotel-data-service";
+import type { Reservation } from "../data/hotel-types";
 
 // ---------------------------------------------------------------------------
-// Demo data – hardcoded arrivals, departures, housekeeping summary
+// Demo data – hardcoded arrivals, departures, housekeeping summary (fallbacks)
 // ---------------------------------------------------------------------------
 
 const DEMO_ARRIVALS = [
-  { guest: "James Wilson", room: "1205", eta: "14:00", vip: true, group: null },
-  { guest: "Maria Garcia", room: "805", eta: "15:00", vip: false, group: "Acme Corp" },
-  { guest: "Robert Johnson", room: "1402", eta: "16:00", vip: false, group: null },
-  { guest: "Sarah Chen", room: "610", eta: "14:30", vip: true, group: null },
-  { guest: "David Kim", room: "903", eta: "17:00", vip: false, group: "Acme Corp" },
-  { guest: "Emily Brown", room: "1501", eta: "15:30", vip: false, group: null },
-  { guest: "Michael Davis", room: "712", eta: "18:00", vip: false, group: null },
-  { guest: "Lisa Anderson", room: "1108", eta: "14:00", vip: true, group: null },
-  { guest: "Thomas Martinez", room: "416", eta: "16:30", vip: false, group: "TechConf" },
-  { guest: "Jennifer Lee", room: "1004", eta: "19:00", vip: false, group: null },
+  { guest: "James Wilson", room: "1205", eta: "14:00", vip: true, group: null as string | null },
+  { guest: "Maria Garcia", room: "805", eta: "15:00", vip: false, group: "Acme Corp" as string | null },
+  { guest: "Robert Johnson", room: "1402", eta: "16:00", vip: false, group: null as string | null },
+  { guest: "Sarah Chen", room: "610", eta: "14:30", vip: true, group: null as string | null },
+  { guest: "David Kim", room: "903", eta: "17:00", vip: false, group: "Acme Corp" as string | null },
+  { guest: "Emily Brown", room: "1501", eta: "15:30", vip: false, group: null as string | null },
+  { guest: "Michael Davis", room: "712", eta: "18:00", vip: false, group: null as string | null },
+  { guest: "Lisa Anderson", room: "1108", eta: "14:00", vip: true, group: null as string | null },
+  { guest: "Thomas Martinez", room: "416", eta: "16:30", vip: false, group: "TechConf" as string | null },
+  { guest: "Jennifer Lee", room: "1004", eta: "19:00", vip: false, group: null as string | null },
 ];
 
 const DEMO_DEPARTURES = [
@@ -52,8 +59,61 @@ const DEMO_HOUSEKEEPING = {
 // ---------------------------------------------------------------------------
 
 export function HotelOperations(props: { store: HotelStore }) {
-  const hkCompletionPct = () =>
-    Math.round(((DEMO_HOUSEKEEPING.clean + DEMO_HOUSEKEEPING.inspected) / DEMO_HOUSEKEEPING.total) * 100);
+  // Resolve property ID from the store's selected slug
+  const propertySlug = () => props.store.state.selectedPropertySlug;
+  const property = useProperty(propertySlug);
+  const propertyId = () => property()?._id ?? null;
+
+  // Wire Convex live queries
+  const rawArrivals = useArrivals(propertyId);
+  const rawDepartures = useDepartures(propertyId);
+  const rawHkProgress = useHousekeepingProgress(propertyId);
+
+  // Map Convex Reservation → arrivals view model, fallback to DEMO_ARRIVALS
+  const arrivals = createMemo(() => {
+    const data = rawArrivals();
+    if (!data || data.length === 0) return DEMO_ARRIVALS;
+    return data.map((r: Reservation) => ({
+      guest: r.guestName,
+      room: r.roomNumber,
+      eta: r.eta ?? "",
+      vip: !!r.vipTier,
+      group: r.groupName ?? null,
+    }));
+  });
+
+  // Map Convex Reservation → departures view model, fallback to DEMO_DEPARTURES
+  const departures = createMemo(() => {
+    const data = rawDepartures();
+    if (!data || data.length === 0) return DEMO_DEPARTURES;
+    return data.map((r: Reservation) => ({
+      guest: r.guestName,
+      room: r.roomNumber,
+      checkout: r.checkoutTime ?? "",
+      balance: r.balance ?? 0,
+    }));
+  });
+
+  // Map Convex housekeeping progress → summary, fallback to DEMO_HOUSEKEEPING
+  const housekeeping = createMemo(() => {
+    const data = rawHkProgress();
+    if (!data) return DEMO_HOUSEKEEPING;
+    return {
+      clean: data.clean,
+      dirty: data.dirty,
+      inProgress: data.inProgress,
+      inspected: 0, // progress query returns clean (which includes inspected), compute separately if needed
+      rush: data.rush,
+      total: data.total,
+    };
+  });
+
+  const hkCompletionPct = () => {
+    const hk = housekeeping();
+    return hk.total > 0
+      ? Math.round(((hk.clean + hk.inspected) / hk.total) * 100)
+      : 0;
+  };
 
   return (
     <div class="flex flex-col lg:flex-row gap-4">
@@ -75,11 +135,11 @@ export function HotelOperations(props: { store: HotelStore }) {
               Arrivals Today
             </span>
             <span class="ml-auto rounded-full bg-green-3 px-2 py-0.5 text-xs font-medium text-green-11">
-              {DEMO_ARRIVALS.length}
+              {arrivals().length}
             </span>
           </div>
           <div class="divide-y divide-[var(--dls-border)]">
-            <For each={DEMO_ARRIVALS}>
+            <For each={arrivals()}>
               {(a) => (
                 <div class="flex items-center gap-2 px-4 py-2 text-xs">
                   <span class="flex-1 truncate font-medium text-[var(--dls-text-primary)]">
@@ -110,11 +170,11 @@ export function HotelOperations(props: { store: HotelStore }) {
               Departures Today
             </span>
             <span class="ml-auto rounded-full bg-red-3 px-2 py-0.5 text-xs font-medium text-red-11">
-              {DEMO_DEPARTURES.length}
+              {departures().length}
             </span>
           </div>
           <div class="divide-y divide-[var(--dls-border)]">
-            <For each={DEMO_DEPARTURES}>
+            <For each={departures()}>
               {(d) => (
                 <div class="flex items-center gap-2 px-4 py-2 text-xs">
                   <span class="flex-1 truncate font-medium text-[var(--dls-text-primary)]">
@@ -160,28 +220,28 @@ export function HotelOperations(props: { store: HotelStore }) {
             <div class="grid grid-cols-2 gap-2 text-xs">
               <div class="flex items-center justify-between rounded bg-green-3 px-2.5 py-1.5">
                 <span class="text-green-11 font-medium">Clean</span>
-                <span class="font-bold text-green-12">{DEMO_HOUSEKEEPING.clean}</span>
+                <span class="font-bold text-green-12">{housekeeping().clean}</span>
               </div>
               <div class="flex items-center justify-between rounded bg-yellow-3 px-2.5 py-1.5">
                 <span class="text-yellow-11 font-medium">Dirty</span>
-                <span class="font-bold text-yellow-12">{DEMO_HOUSEKEEPING.dirty}</span>
+                <span class="font-bold text-yellow-12">{housekeeping().dirty}</span>
               </div>
               <div class="flex items-center justify-between rounded bg-blue-3 px-2.5 py-1.5">
                 <span class="text-blue-11 font-medium">In Progress</span>
-                <span class="font-bold text-blue-12">{DEMO_HOUSEKEEPING.inProgress}</span>
+                <span class="font-bold text-blue-12">{housekeeping().inProgress}</span>
               </div>
               <div class="flex items-center justify-between rounded bg-slate-3 px-2.5 py-1.5">
                 <span class="text-slate-11 font-medium">Inspected</span>
-                <span class="font-bold text-slate-12">{DEMO_HOUSEKEEPING.inspected}</span>
+                <span class="font-bold text-slate-12">{housekeeping().inspected}</span>
               </div>
             </div>
 
             {/* Rush requests */}
-            {DEMO_HOUSEKEEPING.rush > 0 && (
+            {housekeeping().rush > 0 && (
               <div class="flex items-center gap-2 rounded bg-red-3 px-2.5 py-1.5 text-xs">
                 <AlertTriangle class="size-3.5 text-red-11" />
                 <span class="font-medium text-red-11">
-                  {DEMO_HOUSEKEEPING.rush} rush request{DEMO_HOUSEKEEPING.rush !== 1 ? "s" : ""}
+                  {housekeeping().rush} rush request{housekeeping().rush !== 1 ? "s" : ""}
                 </span>
               </div>
             )}

@@ -162,7 +162,7 @@ interface PropertyConfig {
 
 const PROPERTIES: PropertyConfig[] = [
   {
-    slug: "marriott-dallas-downtown",
+    slug: "marriott-dallas",
     totalRooms: 340,
     floorsStart: 2,
     floorsEnd: 18,
@@ -179,7 +179,7 @@ const PROPERTIES: PropertyConfig[] = [
     attendantNames: ATTENDANT_NAMES_DALLAS,
   },
   {
-    slug: "hilton-houston-galleria",
+    slug: "hilton-houston",
     totalRooms: 280,
     floorsStart: 2,
     floorsEnd: 15,
@@ -196,7 +196,7 @@ const PROPERTIES: PropertyConfig[] = [
     attendantNames: ATTENDANT_NAMES_HOUSTON,
   },
   {
-    slug: "hyatt-denver-convention",
+    slug: "hyatt-denver",
     totalRooms: 450,
     floorsStart: 2,
     floorsEnd: 22,

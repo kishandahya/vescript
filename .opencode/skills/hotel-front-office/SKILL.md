@@ -13,7 +13,7 @@ description: Room grid management, arrivals and departures tracking, room status
 
 ## What to do
 
-1. **Load today's operational snapshot** — Pull from `packages/app/public/hotel-data/reservations/` and `packages/app/public/hotel-data/rooms/`:
+1. **Load today's operational snapshot** — Pull from Convex query `api.roomQueries.getByProperty` (`convex/roomQueries.ts`) and related reservation data:
    - Total arrivals (individual, group, walk-in forecast)
    - Total departures (expected check-outs, late check-outs approved)
    - Stayovers (in-house continuing guests)
@@ -55,11 +55,11 @@ description: Room grid management, arrivals and departures tracking, room status
 
 ## Context
 
-- Reservations: `packages/app/public/hotel-data/reservations/`
-- Room inventory: `packages/app/public/hotel-data/rooms/`
-- Guest profiles: `packages/app/public/hotel-data/guests/`
-- VIP list: `packages/app/public/hotel-data/vip/`
-- Housekeeping status: `packages/app/public/hotel-data/housekeeping/`
+- Room inventory: Convex query `api.roomQueries.getByProperty` (`convex/roomQueries.ts`)
+- Housekeeping status: Convex query `api.housekeepingQueries.getBoard` (`convex/housekeepingQueries.ts`)
+- Schema definition: `convex/schema.ts`
+- Data service hooks: `hotel-frontend/data/hotel-data-service.ts`
+- Type definitions: `hotel-frontend/data/hotel-types.ts`
 - Convex tables: `reservations`, `rooms`, `guestProfiles`, `roomAssignments`
 
 ## Output format

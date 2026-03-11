@@ -12,11 +12,11 @@ description: Rate review, pricing strategy, revenue analysis including ADR, RevP
 
 ## What to do
 
-1. **Load property rate data** — Read the current rate configuration from `packages/app/public/hotel-data/rates/` or query Convex for real-time rate data. Identify the property's current BAR (Best Available Rate) by room type and date range.
+1. **Load property rate data** — Read the current rate configuration from Convex query `api.rateQueries.getByProperty` (`convex/rateQueries.ts`). Identify the property's current BAR (Best Available Rate) by room type and date range.
 
-2. **Pull comp set data** — Load competitive set rates from `packages/app/public/hotel-data/compset/`. Identify the property's position within the comp set (index, rank, and variance from set average).
+2. **Pull comp set data** — Load competitive set rates from Convex query `api.compSetQueries.getByProperty` (`convex/compSetQueries.ts`). Identify the property's position within the comp set (index, rank, and variance from set average).
 
-3. **Check market events** — Cross-reference the date range against `packages/app/public/hotel-data/events/` for demand generators (conventions, concerts, sports, holidays). Flag compression nights where demand exceeds supply.
+3. **Check market events** — Cross-reference the date range against Convex query `api.marketEventQueries.getByMarket` (`convex/marketEventQueries.ts`) for demand generators (conventions, concerts, sports, holidays). Flag compression nights where demand exceeds supply.
 
 4. **Analyze key metrics** — Calculate and present:
    - **ADR** (Average Daily Rate) — current vs. budget vs. last year
@@ -41,11 +41,14 @@ description: Rate review, pricing strategy, revenue analysis including ADR, RevP
 
 ## Context
 
-- Property rate sheets: `packages/app/public/hotel-data/rates/`
-- Comp set data: `packages/app/public/hotel-data/compset/`
-- Market events: `packages/app/public/hotel-data/events/`
-- Historical performance: `packages/app/public/hotel-data/historical/`
-- Group blocks: `packages/app/public/hotel-data/groups/`
+- Property rate sheets: Convex query `api.rateQueries.getByProperty` (`convex/rateQueries.ts`)
+- Comp set data: Convex query `api.compSetQueries.getByProperty` (`convex/compSetQueries.ts`)
+- Market events: Convex query `api.marketEventQueries.getByMarket` (`convex/marketEventQueries.ts`)
+- Historical performance: Convex query `api.summaryQueries.getByProperty` (`convex/summaryQueries.ts`)
+- Group blocks: Convex query `api.groupQueries.getByProperty` (`convex/groupQueries.ts`)
+- Schema definition: `convex/schema.ts`
+- Data service hooks: `hotel-frontend/data/hotel-data-service.ts`
+- Type definitions: `hotel-frontend/data/hotel-types.ts`
 - Convex tables: `rates`, `reservations`, `compSetRates`, `marketEvents`
 
 ## Output format

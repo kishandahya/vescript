@@ -3,9 +3,10 @@ import { Building2, ArrowUpDown, Filter } from "lucide-solid";
 import { KpiCard, KpiCardGrid } from "../components/kpi-card";
 import { PropertyCard } from "../components/property-card";
 import type { HotelStore } from "../state/hotel-store";
+import { useProperties, useRegions, useAllLatestSummaries } from "../data/hotel-data-service";
 
 // ---------------------------------------------------------------------------
-// Demo data – 15 properties across 3 regions
+// Demo data – 15 properties across 3 regions (fallback)
 // ---------------------------------------------------------------------------
 
 interface DemoProperty {
@@ -42,7 +43,7 @@ const DEMO_PROPERTIES: DemoProperty[] = [
   { name: "Westin Austin Downtown", brand: "Marriott (Premium)", market: "Austin", totalRooms: 366, occupancy: 79.8, adr: 215, revpar: 171.6, revenue: 64600, occDelta: 3.8, adrDelta: 2.2, revparDelta: 6.1, trend: [77, 78, 79, 80, 80, 80, 79.8], region: "mountain-west" },
 ];
 
-const REGIONS = [
+const DEMO_REGIONS = [
   { value: "all", label: "All Regions" },
   { value: "texas-south-central", label: "Texas / South Central" },
   { value: "southeast", label: "Southeast" },
@@ -99,11 +100,70 @@ export function HotelPortfolio(props: { store: HotelStore }) {
   const [sort, setSort] = createSignal<SortOption>("name");
   const [viewMode, setViewMode] = createSignal<"grid" | "list">("grid");
 
+  // ── Convex live data ────────────────────────────────────────────────
+  const liveProperties = useProperties();
+  const liveSummaries = useAllLatestSummaries();
+  const liveRegions = useRegions();
+
+  // Build region dropdown from Convex or fallback
+  const regions = createMemo(() => {
+    const lr = liveRegions();
+    if (lr && lr.length > 0) {
+      return [
+        { value: "all", label: "All Regions" },
+        ...lr.map((r: any) => ({ value: r.slug as string, label: r.name as string })),
+      ];
+    }
+    return DEMO_REGIONS as unknown as { value: string; label: string }[];
+  });
+
+  // Join properties with their latest summaries into DemoProperty shape
+  const allProperties = createMemo((): DemoProperty[] => {
+    const props = liveProperties();
+    const summaries = liveSummaries();
+    if (!props || props.length === 0) return DEMO_PROPERTIES;
+
+    // Build lookup by propertyId from summary data
+    const summaryBySlug = new Map<string, any>();
+    if (summaries) {
+      for (const s of summaries) {
+        summaryBySlug.set(s.propertySlug, s);
+      }
+    }
+
+    return props.map((p: any): DemoProperty => {
+      const s = summaryBySlug.get(p.slug);
+      const occ = s?.occupancy ?? 0;
+      const adr = s?.adr ?? 0;
+      const revpar = s?.revpar ?? 0;
+      const revenue = s?.revenue ?? 0;
+      const budgetOcc = s?.budgetOccupancy ?? occ;
+      const budgetAdr = s?.budgetAdr ?? adr;
+      const budgetRevpar = s?.budgetRevpar ?? revpar;
+      return {
+        name: p.name,
+        brand: p.brand,
+        market: p.market,
+        totalRooms: p.totalRooms,
+        occupancy: occ,
+        adr,
+        revpar,
+        revenue,
+        occDelta: budgetOcc ? +((occ - budgetOcc) / budgetOcc * 100).toFixed(1) : 0,
+        adrDelta: budgetAdr ? +((adr - budgetAdr) / budgetAdr * 100).toFixed(1) : 0,
+        revparDelta: budgetRevpar ? +((revpar - budgetRevpar) / budgetRevpar * 100).toFixed(1) : 0,
+        trend: [occ], // single-point trend from latest summary
+        region: p.regionId ?? "",
+      };
+    });
+  });
+
   // Filtered list
   const filtered = createMemo(() => {
     const r = region();
-    if (r === "all") return DEMO_PROPERTIES;
-    return DEMO_PROPERTIES.filter((p) => p.region === r);
+    const all = allProperties();
+    if (r === "all") return all;
+    return all.filter((p) => p.region === r);
   });
 
   // Sorted list
@@ -131,6 +191,9 @@ export function HotelPortfolio(props: { store: HotelStore }) {
       +avg(f.map((p) => p.trend[i] ?? 0)).toFixed(1),
     );
   });
+
+  // Total property count (for "Showing X of Y" label)
+  const totalPropertyCount = createMemo(() => allProperties().length);
 
   const selectClass =
     "rounded-[var(--dls-radius)] border border-[var(--dls-border)] bg-[var(--dls-surface)] px-3 py-1.5 text-sm text-[var(--dls-text-primary)] outline-none focus:ring-1 focus:ring-[var(--dls-accent)]";
@@ -182,7 +245,7 @@ export function HotelPortfolio(props: { store: HotelStore }) {
             value={region()}
             onChange={(e) => setRegion(e.currentTarget.value)}
           >
-            <For each={REGIONS}>{(r) => <option value={r.value}>{r.label}</option>}</For>
+            <For each={regions()}>{(r) => <option value={r.value}>{r.label}</option>}</For>
           </select>
         </div>
 
@@ -226,7 +289,7 @@ export function HotelPortfolio(props: { store: HotelStore }) {
       {/* ── Property Grid ─────────────────────────────────────── */}
       <section>
         <div class="mb-2 text-xs text-[var(--dls-text-secondary)]">
-          Showing {properties().length} of {DEMO_PROPERTIES.length} properties
+          Showing {properties().length} of {totalPropertyCount()} properties
         </div>
         <div
           class={

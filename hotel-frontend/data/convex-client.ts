@@ -3,6 +3,7 @@
 // ---------------------------------------------------------------------------
 import { ConvexClient } from "convex/browser";
 import { createSignal, createEffect, onCleanup } from "solid-js";
+import type { JSX } from "solid-js";
 import type {
   FunctionReference,
   FunctionArgs,
@@ -91,4 +92,26 @@ export function useConvexMutation<
     if (!c) throw new Error("Convex client not initialized – is VITE_CONVEX_URL set?");
     return c.mutation(mutation, args);
   };
+}
+
+// ---------------------------------------------------------------------------
+// Provider component – initialises the singleton with an explicit URL and
+// renders children.  This is a thin wrapper so the app entry-point can
+// declaratively supply the URL.
+// ---------------------------------------------------------------------------
+
+/**
+ * Initialise the Convex singleton with `url` and render `children`.
+ * If the singleton was already created (e.g. via `getConvexClient()`) this is
+ * effectively a no-op pass-through.
+ */
+export function ConvexClientProvider(props: {
+  url: string;
+  children: JSX.Element;
+}): JSX.Element {
+  // Eagerly ensure the client exists for the given URL.
+  if (!client) {
+    client = new ConvexClient(props.url);
+  }
+  return props.children as JSX.Element;
 }

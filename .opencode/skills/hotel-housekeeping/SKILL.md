@@ -12,7 +12,7 @@ description: Section assignment optimization, cleaning schedule management, room
 
 ## What to do
 
-1. **Load room status and reservations** — Pull from `packages/app/public/hotel-data/rooms/` and `packages/app/public/hotel-data/reservations/`:
+1. **Load room status and reservations** — Pull from Convex query `api.roomQueries.getByProperty` (`convex/roomQueries.ts`) and `api.housekeepingQueries.getBoard` (`convex/housekeepingQueries.ts`):
    - Rooms with departures today (checkout rooms = full clean)
    - Stayover rooms (service clean, lighter workload)
    - Vacant dirty rooms from last night (deep clean if >1 night vacant)
@@ -29,7 +29,7 @@ description: Section assignment optimization, cleaning schedule management, room
    - VIP pre-arrival inspection: +0.25 credits
    - Adjust for specific room features (kitchen, multiple bathrooms, rollaway beds)
 
-3. **Determine available attendants** — Load staffing data from `packages/app/public/hotel-data/staffing/`:
+3. **Determine available attendants** — Load staffing data from Convex (see `convex/schema.ts` for staffing-related tables):
    - Scheduled attendants for today's shift
    - Call-outs or absences
    - Part-time vs. full-time (max credits differ)
@@ -62,11 +62,11 @@ description: Section assignment optimization, cleaning schedule management, room
 
 ## Context
 
-- Room status: `packages/app/public/hotel-data/rooms/`
-- Reservations: `packages/app/public/hotel-data/reservations/`
-- Staff schedules: `packages/app/public/hotel-data/staffing/`
-- Room types: `packages/app/public/hotel-data/room-types/`
-- VIP list: `packages/app/public/hotel-data/vip/`
+- Room status: Convex query `api.roomQueries.getByProperty` (`convex/roomQueries.ts`)
+- Housekeeping board: Convex query `api.housekeepingQueries.getBoard` (`convex/housekeepingQueries.ts`)
+- Schema definition: `convex/schema.ts`
+- Data service hooks: `hotel-frontend/data/hotel-data-service.ts`
+- Type definitions: `hotel-frontend/data/hotel-types.ts`
 - Convex tables: `rooms`, `reservations`, `staffSchedules`, `roomTypes`
 
 ## Output format

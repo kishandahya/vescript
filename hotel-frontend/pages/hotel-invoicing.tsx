@@ -3,9 +3,17 @@ import { FileText, AlertTriangle, Flag, Filter } from "lucide-solid";
 import type { HotelStore } from "../state/hotel-store";
 import { InvoiceList, type DemoInvoice } from "../components/invoice-list";
 import { InvoiceDetailModal } from "../components/invoice-detail-modal";
+import {
+  useProperty,
+  useInvoicesByProperty,
+  useApproveInvoice,
+  useFlagInvoice,
+  useRouteInvoiceToRegional,
+  useRejectInvoice,
+} from "../data/hotel-data-service";
 
 // ---------------------------------------------------------------------------
-// Demo invoice data (17 invoices matching seedFinancial.ts)
+// Demo invoice data (17 invoices matching seedFinancial.ts) – fallback
 // ---------------------------------------------------------------------------
 
 const DEMO_INVOICES: DemoInvoice[] = [
@@ -43,9 +51,44 @@ export function HotelInvoicing(props: { store: HotelStore }) {
   const [selectedInvoice, setSelectedInvoice] = createSignal<DemoInvoice | null>(null);
   const [selectedIds, setSelectedIds] = createSignal<Set<string>>(new Set());
   const [filterStatus, setFilterStatus] = createSignal<FilterOption>("all");
-  const [invoices, setInvoices] = createSignal(DEMO_INVOICES);
 
-  // ── Derived metrics ──────────────────────────────────────────────────
+  // ── Resolve property from store slug ──────────────────────────────
+  const liveProperty = useProperty(() => props.store.state.selectedPropertySlug);
+  const propertyId = createMemo(() => {
+    const p = liveProperty();
+    return p ? (p._id as string) : null;
+  });
+
+  // ── Convex live invoices ──────────────────────────────────────────
+  const liveInvoices = useInvoicesByProperty(propertyId);
+
+  // Map Convex Invoice rows → DemoInvoice shape the UI expects
+  const invoices = createMemo((): DemoInvoice[] => {
+    const raw = liveInvoices();
+    if (!raw || raw.length === 0) return DEMO_INVOICES;
+    return raw.map((inv: any): DemoInvoice => ({
+      id: inv._id as string,
+      vendor: inv.vendor,
+      invoiceNum: inv.contractReference ?? inv._id,
+      date: inv.dueDate,
+      amount: inv.amount,
+      category: inv.category,
+      status: inv.status,
+      flags: inv.flags ?? [],
+      description: inv.description,
+      contractRate: null,
+      budgetCategory: inv.category,
+      budgetPct: 0,
+    }));
+  });
+
+  // ── Convex mutations ──────────────────────────────────────────────
+  const approveInvoice = useApproveInvoice();
+  const flagInvoice = useFlagInvoice();
+  const routeInvoice = useRouteInvoiceToRegional();
+  const rejectInvoice = useRejectInvoice();
+
+  // ── Derived metrics ──────────────────────────────────────────────
   const pendingInvoices = createMemo(() => invoices().filter((i) => i.status === "pending"));
   const totalPending = createMemo(() => pendingInvoices().reduce((s, i) => s + i.amount, 0));
   const highPriority = createMemo(() => invoices().filter((i) => i.flags.includes("capital-approval")));
@@ -53,7 +96,7 @@ export function HotelInvoicing(props: { store: HotelStore }) {
   const anomalyInvoices = createMemo(() => invoices().filter((i) => i.flags.length > 0));
   const anomalyTotal = createMemo(() => anomalyInvoices().reduce((s, i) => s + i.amount, 0));
 
-  // ── Filtered list ────────────────────────────────────────────────────
+  // ── Filtered list ────────────────────────────────────────────────
   const filteredInvoices = createMemo(() => {
     const f = filterStatus();
     if (f === "all") return invoices();
@@ -61,7 +104,7 @@ export function HotelInvoicing(props: { store: HotelStore }) {
     return invoices().filter((i) => i.status === f);
   });
 
-  // ── Toggle selection ─────────────────────────────────────────────────
+  // ── Toggle selection ─────────────────────────────────────────────
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -71,12 +114,27 @@ export function HotelInvoicing(props: { store: HotelStore }) {
     });
   };
 
-  // ── Batch + single actions ───────────────────────────────────────────
-  const applyAction = (ids: string[], action: "approve" | "flag" | "reject" | "route") => {
-    const statusMap = { approve: "approved", flag: "flagged", reject: "rejected", route: "routed" } as const;
-    setInvoices((prev) =>
-      prev.map((inv) => (ids.includes(inv.id) ? { ...inv, status: statusMap[action] } : inv)),
-    );
+  // ── Helper: check if live data is active (ids are Convex _id strings) ─
+  const isLive = createMemo(() => {
+    const raw = liveInvoices();
+    return raw && raw.length > 0;
+  });
+
+  // ── Batch + single actions ───────────────────────────────────────
+  const applyAction = async (ids: string[], action: "approve" | "flag" | "reject" | "route") => {
+    if (isLive()) {
+      // Use Convex mutations – reactive subscription auto-refreshes the list
+      const mutationMap = { approve: approveInvoice, flag: flagInvoice, reject: rejectInvoice, route: routeInvoice };
+      const mutation = mutationMap[action];
+      for (const id of ids) {
+        try {
+          await mutation({ invoiceId: id as any });
+        } catch {
+          // ignore individual failures
+        }
+      }
+    }
+    // Convex reactivity will update invoices() automatically
     setSelectedIds(new Set<string>());
   };
 

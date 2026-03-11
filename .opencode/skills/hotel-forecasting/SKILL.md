@@ -13,20 +13,20 @@ description: Occupancy forecasting, demand analysis, booking pace tracking, and 
 
 ## What to do
 
-1. **Pull on-the-books data** — Load current reservation data from `packages/app/public/hotel-data/reservations/` or Convex. For each future date, count:
+1. **Pull on-the-books data** — Load current reservation data from Convex query `api.forecastQueries.getByProperty` (`convex/forecastQueries.ts`). For each future date, count:
    - Definite individual reservations
    - Group block rooms (definite and tentative)
    - Total OTB rooms
    - Available inventory remaining
 
-2. **Load historical patterns** — From `packages/app/public/hotel-data/historical/`, pull:
+2. **Load historical patterns** — From Convex query `api.summaryQueries.getByProperty` (`convex/summaryQueries.ts`), pull:
    - Same-day-last-year (SDLY) actuals for occupancy, ADR, RevPAR
    - Same-day-last-year OTB at the same booking window
    - Day-of-week seasonal patterns
    - Historical pickup curves (how many rooms book in the last 7, 14, 30 days)
    - Cancellation and no-show rates by segment
 
-3. **Factor in market events** — Cross-reference against `packages/app/public/hotel-data/events/`:
+3. **Factor in market events** — Cross-reference against Convex query `api.marketEventQueries.getByMarket` (`convex/marketEventQueries.ts`):
    - Citywide conventions and conferences
    - Local events (sports, concerts, festivals)
    - Holiday periods and school breaks
@@ -62,11 +62,13 @@ description: Occupancy forecasting, demand analysis, booking pace tracking, and 
 
 ## Context
 
-- Reservations: `packages/app/public/hotel-data/reservations/`
-- Historical performance: `packages/app/public/hotel-data/historical/`
-- Market events: `packages/app/public/hotel-data/events/`
-- Group blocks: `packages/app/public/hotel-data/groups/`
-- Forecasts: `packages/app/public/hotel-data/forecasts/`
+- Historical performance: Convex query `api.summaryQueries.getByProperty` (`convex/summaryQueries.ts`)
+- Market events: Convex query `api.marketEventQueries.getByMarket` (`convex/marketEventQueries.ts`)
+- Group blocks: Convex query `api.groupQueries.getByProperty` (`convex/groupQueries.ts`)
+- Forecasts: Convex query `api.forecastQueries.getByProperty` (`convex/forecastQueries.ts`)
+- Schema definition: `convex/schema.ts`
+- Data service hooks: `hotel-frontend/data/hotel-data-service.ts`
+- Type definitions: `hotel-frontend/data/hotel-types.ts`
 - Convex tables: `reservations`, `historicalPerformance`, `marketEvents`, `groups`
 
 ## Output format

@@ -2,10 +2,11 @@ import { createSignal, createMemo, For, Show } from "solid-js";
 import { Search } from "lucide-solid";
 import { RoomCell } from "./room-cell";
 import type { HotelStore } from "../state/hotel-store";
-import type { RoomStatus } from "../data/hotel-types";
+import type { RoomStatus, Room } from "../data/hotel-types";
+import { useProperty, useRooms } from "../data/hotel-data-service";
 
 // ---------------------------------------------------------------------------
-// Demo data generator – 340 rooms, floors 2–18, ~20 rooms per floor
+// Demo data generator – 340 rooms, floors 2–18, ~20 rooms per floor (fallback)
 // ---------------------------------------------------------------------------
 
 interface DemoRoom {
@@ -66,7 +67,7 @@ function generateRooms(): DemoRoom[] {
   return rooms;
 }
 
-const ALL_ROOMS = generateRooms();
+const FALLBACK_ROOMS = generateRooms();
 
 // ---------------------------------------------------------------------------
 // Status chip config
@@ -90,18 +91,43 @@ export function RoomGrid(props: { store: HotelStore }) {
   const [search, setSearch] = createSignal("");
   const [collapsedFloors, setCollapsedFloors] = createSignal<Set<number>>(new Set());
 
+  // Resolve property ID from the store's selected slug
+  const propertySlug = () => props.store.state.selectedPropertySlug;
+  const property = useProperty(propertySlug);
+  const propertyId = () => property()?._id ?? null;
+
+  // Fetch live rooms from Convex
+  const rawRooms = useRooms(propertyId);
+
+  // Map Convex Room → DemoRoom, fallback to generated rooms
+  const allRooms = createMemo((): DemoRoom[] => {
+    const data = rawRooms();
+    if (!data || data.length === 0) return FALLBACK_ROOMS;
+    return data.map((r: Room) => ({
+      number: r.number,
+      floor: r.floor,
+      status: r.status as RoomStatus,
+      guestName: r.guestName,
+      isVip: r.isVip,
+      hasSpecialRequests: !!r.specialRequests,
+      lateCheckout: r.lateCheckout,
+    }));
+  });
+
   const filteredRooms = createMemo(() => {
+    const rooms = allRooms();
     const q = search().toLowerCase().trim();
-    if (!q) return ALL_ROOMS;
-    return ALL_ROOMS.filter(
+    if (!q) return rooms;
+    return rooms.filter(
       (r) => r.number.includes(q) || (r.guestName?.toLowerCase().includes(q) ?? false),
     );
   });
 
   const statusCounts = createMemo(() => {
+    const rooms = allRooms();
     const counts: Record<string, number> = {};
     for (const cfg of STATUS_CONFIG) counts[cfg.key] = 0;
-    for (const r of ALL_ROOMS) {
+    for (const r of rooms) {
       if (counts[r.status] !== undefined) counts[r.status]++;
     }
     return counts;

@@ -1,7 +1,8 @@
-import { For } from "solid-js";
+import { createMemo, For } from "solid-js";
 import type { HotelStore } from "../state/hotel-store";
+import { useProperties } from "../data/hotel-data-service";
 
-/** Hard-coded property list matching the seed data. Will be replaced by a Convex query later. */
+/** Hard-coded property list matching the seed data – used as fallback. */
 const PROPERTIES: { slug: string; name: string }[] = [
   // Texas / South Central
   { slug: "marriott-dallas", name: "Marriott Dallas Downtown" },
@@ -24,6 +25,16 @@ const PROPERTIES: { slug: string; name: string }[] = [
 ];
 
 export function PropertySelector(props: { store: HotelStore }) {
+  const liveProperties = useProperties();
+
+  const propertyList = createMemo(() => {
+    const live = liveProperties();
+    if (live && live.length > 0) {
+      return live.map((p: any) => ({ slug: p.slug as string, name: p.name as string }));
+    }
+    return PROPERTIES;
+  });
+
   return (
     <select
       class="text-xs rounded px-2 py-1 border outline-none max-w-[220px] truncate"
@@ -39,7 +50,7 @@ export function PropertySelector(props: { store: HotelStore }) {
       }}
     >
       <option value="">All Properties</option>
-      <For each={PROPERTIES}>
+      <For each={propertyList()}>
         {(p) => <option value={p.slug}>{p.name}</option>}
       </For>
     </select>

@@ -31,3 +31,22 @@ export const getByRegion = query({
     return summaries;
   },
 });
+
+export const getAllLatest = query({
+  args: {},
+  handler: async (ctx) => {
+    const properties = await ctx.db.query("properties").collect();
+    const results = [];
+    for (const prop of properties) {
+      const summary = await ctx.db
+        .query("dailySummaries")
+        .withIndex("by_property", (q) => q.eq("propertyId", prop._id))
+        .order("desc")
+        .first();
+      if (summary) {
+        results.push({ ...summary, propertySlug: prop.slug, propertyName: prop.name });
+      }
+    }
+    return results;
+  },
+});
