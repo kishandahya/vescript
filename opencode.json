@@ -1,0 +1,10 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "hotel-data": {
+      "type": "local",
+      "command": ["bun", "run", "mcp/hotel-data-server.ts"],
+      "description": "Hotel PMS data via Convex — provides property summaries, rate positions, group pipeline, invoice anomalies"
+    }
+  }
+}
