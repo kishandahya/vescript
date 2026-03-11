@@ -9,6 +9,7 @@
  */
 
 import type * as compSetQueries from "../compSetQueries.js";
+import type * as connectorMutations from "../connectorMutations.js";
 import type * as forecastQueries from "../forecastQueries.js";
 import type * as groupMutations from "../groupMutations.js";
 import type * as groupQueries from "../groupQueries.js";
@@ -37,6 +38,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   compSetQueries: typeof compSetQueries;
+  connectorMutations: typeof connectorMutations;
   forecastQueries: typeof forecastQueries;
   groupMutations: typeof groupMutations;
   groupQueries: typeof groupQueries;
