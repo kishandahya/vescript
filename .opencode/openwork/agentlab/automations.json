@@ -1,0 +1,18 @@
+{
+  "automations": [
+    {
+      "id": "opera-pms-sync",
+      "name": "Opera PMS Data Sync",
+      "description": "Pulls latest reservation and room data from Opera PMS",
+      "schedule": { "type": "interval", "seconds": 900 },
+      "command": "npx tsx connectors/opera-pms-mock.ts"
+    },
+    {
+      "id": "rms-daily-sync",
+      "name": "Revenue Management System Sync",
+      "description": "Pulls rate recommendations and comp set data",
+      "schedule": { "type": "daily", "hour": 6, "minute": 0 },
+      "command": "npx tsx connectors/rms-mock.ts"
+    }
+  ]
+}
