@@ -1,0 +1,34 @@
+{
+  "automations": [
+    {
+      "id": "opera-pms-sync",
+      "name": "Opera PMS Data Sync",
+      "description": "Pulls latest reservation and room data from Opera PMS",
+      "schedule": { "type": "interval", "seconds": 900 },
+      "command": "npx tsx connectors/opera-pms-mock.ts"
+    },
+    {
+      "id": "rms-daily-sync",
+      "name": "Revenue Management System Sync",
+      "description": "Pulls rate recommendations and comp set data",
+      "schedule": { "type": "daily", "hour": 6, "minute": 0 },
+      "command": "npx tsx connectors/rms-mock.ts"
+    },
+    {
+      "id": "morning-briefing",
+      "name": "GM Morning Briefing",
+      "description": "Generates morning briefing report for each GM using hotel-gm-briefing skill and hotel-data MCP tools",
+      "schedule": { "type": "daily", "hour": 7, "minute": 0 },
+      "prompt": "Run the /morning-briefing command. Use the hotel-gm-briefing skill. Query get_property_summary and get_arrivals_departures and get_night_audit for today. Format as a structured morning briefing report with sections: Last Night Summary, Today's Forecast, Action Items, Alerts. Save the report.",
+      "agent": "hotel-gm"
+    },
+    {
+      "id": "daily-revenue-flash",
+      "name": "Daily Revenue Flash",
+      "description": "Portfolio-wide revenue summary for district managers and SVP",
+      "schedule": { "type": "daily", "hour": 8, "minute": 0 },
+      "prompt": "Run the /portfolio-flash command. Use the hotel-portfolio-analysis skill. Query get_portfolio_overview for all regions. Format as an executive revenue flash with sections: Portfolio KPIs, Regional Breakdown, Top/Bottom Performers, Rate Position Summary. Save the report.",
+      "agent": "hotel-svp"
+    }
+  ]
+}

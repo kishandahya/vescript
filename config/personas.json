@@ -1,0 +1,34 @@
+{
+  "personas": {
+    "sarah-chen": {
+      "name": "Sarah Chen",
+      "role": "Revenue Manager",
+      "agent": "hotel-revenue-mgr",
+      "scope": "property",
+      "propertyId": "marriott-dallas",
+      "propertyName": "Marriott Dallas Downtown"
+    },
+    "james-wilson": {
+      "name": "James Wilson",
+      "role": "General Manager",
+      "agent": "hotel-gm",
+      "scope": "property",
+      "propertyId": "fairfield-dallas",
+      "propertyName": "Fairfield Inn Dallas Plano"
+    },
+    "mike-torres": {
+      "name": "Mike Torres",
+      "role": "District Manager",
+      "agent": "hotel-district-mgr",
+      "scope": "region",
+      "regionId": "texas-south-central",
+      "regionName": "Texas / South Central"
+    },
+    "linda-park": {
+      "name": "Linda Park",
+      "role": "SVP Operations",
+      "agent": "hotel-svp",
+      "scope": "portfolio"
+    }
+  }
+}
